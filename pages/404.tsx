@@ -1,26 +1,30 @@
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import type { GetServerSideProps } from "next";
+import type { GetStaticProps } from "next";
 import { themes } from "./api/theme";
 import { generateCssVars } from "../lib/theme-utils";
 import type { Theme } from "../lib/types";
 
 interface NotFoundPageProps {
-  theme: Theme;
+  themes: Theme[];
 }
 
-export const getServerSideProps: GetServerSideProps<NotFoundPageProps> = async ({ req }) => {
-  const cookies = req.headers.cookie || "";
-  const themeIdMatch = cookies.match(/themeId=([^;]+)/);
-  const themeId = themeIdMatch ? themeIdMatch[1] : null;
-
-  const theme = themes.find((t) => t.id === themeId) ||
-    themes[Math.floor(Math.random() * themes.length)];
-
-  return { props: { theme } };
+export const getStaticProps: GetStaticProps<NotFoundPageProps> = async () => {
+  return { props: { themes } };
 };
 
-export default function NotFoundPage({ theme }: NotFoundPageProps) {
+export default function NotFoundPage({ themes }: NotFoundPageProps) {
+  const [theme, setTheme] = useState<Theme>(themes[0]);
+
+  useEffect(() => {
+    const match = document.cookie.match(/themeId=([^;]+)/);
+    if (match) {
+      const found = themes.find((t) => t.id === match[1]);
+      if (found) setTheme(found);
+    }
+  }, [themes]);
+
   const cssVars = generateCssVars(theme.colors);
 
   return (
