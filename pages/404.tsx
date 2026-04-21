@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import type { GetStaticProps } from "next";
+import type { GetServerSideProps } from "next";
 import { themes } from "./api/theme";
 import { generateCssVars } from "../lib/theme-utils";
 import type { Theme } from "../lib/types";
@@ -9,8 +9,14 @@ interface NotFoundPageProps {
   theme: Theme;
 }
 
-export const getStaticProps: GetStaticProps<NotFoundPageProps> = async () => {
-  const theme = themes[0];
+export const getServerSideProps: GetServerSideProps<NotFoundPageProps> = async ({ req }) => {
+  const cookies = req.headers.cookie || "";
+  const themeIdMatch = cookies.match(/themeId=([^;]+)/);
+  const themeId = themeIdMatch ? themeIdMatch[1] : null;
+
+  const theme = themes.find((t) => t.id === themeId) ||
+    themes[Math.floor(Math.random() * themes.length)];
+
   return { props: { theme } };
 };
 
