@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import type { GetStaticProps } from "next";
@@ -6,15 +7,28 @@ import { generateCssVars } from "../lib/theme-utils";
 import type { Theme } from "../lib/types";
 
 interface NotFoundPageProps {
-  theme: Theme;
+  themes: Theme[];
 }
 
 export const getStaticProps: GetStaticProps<NotFoundPageProps> = async () => {
-  const theme = themes[0];
-  return { props: { theme } };
+  return { props: { themes } };
 };
 
-export default function NotFoundPage({ theme }: NotFoundPageProps) {
+export default function NotFoundPage({ themes }: NotFoundPageProps) {
+  const [theme, setTheme] = useState<Theme>(themes[0]);
+
+  useEffect(() => {
+    const match = document.cookie.match(/themeId=([^;]+)/);
+    if (match) {
+      const found = themes.find((t) => t.id === match[1]);
+      if (found) {
+        setTheme(found);
+        return;
+      }
+    }
+    setTheme(themes[Math.floor(Math.random() * themes.length)]);
+  }, [themes]);
+
   const cssVars = generateCssVars(theme.colors);
 
   return (
