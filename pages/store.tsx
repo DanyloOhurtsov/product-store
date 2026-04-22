@@ -16,13 +16,21 @@ import type { Theme, Product } from "../lib/types";
 
 interface StorePageProps {
   themes: Theme[];
+  initialThemeIndex: number;
   products: Product[];
   error?: string;
 }
 
 export const getServerSideProps: GetServerSideProps<
   StorePageProps
-> = async () => {
+> = async ({ res: serverRes }) => {
+  const initialThemeIndex = Math.floor(Math.random() * themes.length);
+
+  serverRes.setHeader(
+    "Set-Cookie",
+    `themeId=${themes[initialThemeIndex].id}; Path=/; Max-Age=86400; SameSite=Lax`,
+  );
+
   try {
     const res = await fetch(
       `${PRODUCTS_ENDPOINT}?limit=${PRODUCTS_LIMIT}&select=${PRODUCTS_FIELDS}`,
@@ -37,6 +45,7 @@ export const getServerSideProps: GetServerSideProps<
     return {
       props: {
         themes,
+        initialThemeIndex,
         products: data.products as Product[],
       },
     };
@@ -44,6 +53,7 @@ export const getServerSideProps: GetServerSideProps<
     return {
       props: {
         themes,
+        initialThemeIndex,
         products: [],
         error: "Failed to load products",
       },
@@ -51,15 +61,17 @@ export const getServerSideProps: GetServerSideProps<
   }
 };
 
-export default function StorePage({ themes, products, error }: StorePageProps) {
-  const [themeIndex, setThemeIndex] = useState(0);
+export default function StorePage({ themes, initialThemeIndex, products, error }: StorePageProps) {
+  const [themeIndex, setThemeIndex] = useState(initialThemeIndex);
   const theme = themes[themeIndex];
   const cssVars = generateCssVars(theme.colors);
   const isUrban = theme.id === THEME_IDS.URBAN_ESSENTIALS;
   const isForest = theme.id === THEME_IDS.FOREST_EXPLORER;
 
   const toggleTheme = () => {
-    setThemeIndex((i) => (i + 1) % themes.length);
+    const newIndex = (themeIndex + 1) % themes.length;
+    setThemeIndex(newIndex);
+    document.cookie = `themeId=${themes[newIndex].id}; Path=/; Max-Age=86400; SameSite=Lax`;
   };
 
   return (
@@ -87,9 +99,9 @@ export default function StorePage({ themes, products, error }: StorePageProps) {
         )}
         <main className={`max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 ${isForest ? "p-12" : ""}`}>
           {isForest ? (
-            <div className="flex flex-col items-center mb-20">
+            <div className="flex flex-col items-center mb-16 sm:mb-20">
               <h1
-                className="text-[36px] font-bold uppercase leading-[40px] tracking-[5.4px] mb-6"
+                className="text-[36px] font-bold uppercase leading-[40px] tracking-[5.4px] pb-6"
                 style={{
                   color: "#C9EED6",
                   fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -134,10 +146,10 @@ export default function StorePage({ themes, products, error }: StorePageProps) {
               <p className="text-sm">Please try refreshing the page.</p>
             </div>
           ) : isUrban ? (
-            <div className="w-fit mx-auto">
-              <div className="mb-[3.25rem]">
+            <div>
+              <div className="mb-12">
                 <h1
-                  className="text-6xl font-bold uppercase leading-[60px] tracking-[-3px]"
+                  className="text-[60px] font-bold uppercase leading-[60px] tracking-[-3px]"
                   style={{
                     color: "var(--text)",
                     fontFamily: theme.fonts.heading,
@@ -148,7 +160,7 @@ export default function StorePage({ themes, products, error }: StorePageProps) {
                   Essentials
                 </h1>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-[44px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
                 {products.map((product) => (
                   <ProductCard
                     key={product.id}
@@ -163,7 +175,7 @@ export default function StorePage({ themes, products, error }: StorePageProps) {
             <div
               className={`grid grid-cols-1 sm:grid-cols-2 ${
                 isForest
-                  ? "lg:grid-cols-[repeat(4,272px)] gap-8 w-fit mx-auto"
+                  ? "lg:grid-cols-4 gap-8 w-full"
                   : "md:grid-cols-3 lg:grid-cols-4 gap-x-12 gap-y-[3.25rem]"
               }`}
             >

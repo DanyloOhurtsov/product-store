@@ -21,12 +21,8 @@ export default function NotFoundPage({ themes }: NotFoundPageProps) {
     const match = document.cookie.match(/themeId=([^;]+)/);
     if (match) {
       const found = themes.find((t) => t.id === match[1]);
-      if (found) {
-        setTheme(found);
-        return;
-      }
+      if (found) setTheme(found);
     }
-    setTheme(themes[Math.floor(Math.random() * themes.length)]);
   }, [themes]);
 
   const cssVars = generateCssVars(theme.colors);
